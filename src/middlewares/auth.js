@@ -1,8 +1,6 @@
 const passport = require('passport');
 const httpStatus = require('http-status');
 const ApiError = require('../utils/ApiError');
-const { roleRights } = require('../config/roles');
-const { jwtStrategy } = require('../config/passport');
 
 const verifyCallback = (req, resolve, reject, requiredRights) => async (err, user, info) => {
   if (err || info || !user) {
@@ -10,9 +8,11 @@ const verifyCallback = (req, resolve, reject, requiredRights) => async (err, use
   }
   req.user = user;
 
-  console.log(user);
   if (requiredRights.length) {
-    if (!user.owner) {
+    if (requiredRights.includes('startGame') && !user.owner) {
+      return reject(new ApiError(httpStatus.FORBIDDEN, 'Not allowed to start game'));
+    } else if (requiredRights.includes('room') && !user.roomId) {
+      // TODO: Check for existence of the room
       return reject(new ApiError(httpStatus.FORBIDDEN, 'Not allowed to start game'));
     }
   }
@@ -24,7 +24,6 @@ const auth =
   (...requiredRights) =>
   async (req, res, next) => {
     return new Promise((resolve, reject) => {
-      passport.use(jwtStrategy);
       passport.authenticate('jwt', { session: false }, verifyCallback(req, resolve, reject, requiredRights))(req, res, next);
     })
       .then(() => next())

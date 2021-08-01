@@ -73,10 +73,30 @@ const startGame = async (roomName) => {
   return room;
 };
 
+/**
+ * Leave room by person
+ * @param {String} roomName
+ * * @param {String} playerId
+ * @returns {Promise<Room>}
+ */
+const removeUser = async (roomName, playerId) => {
+  const room = await getRoomByName(roomName);
+  if (!room) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Room not found');
+  }
+
+  const newPlayers = room.players.filter((p) => p.id !== playerId);
+  newPlayers[0].owner = true;
+  room.players = newPlayers;
+  await room.save();
+  return room;
+};
+
 module.exports = {
   createRoom,
   getRoomById,
   getRoomByName,
   joinRoom,
   startGame,
+  removeUser,
 };

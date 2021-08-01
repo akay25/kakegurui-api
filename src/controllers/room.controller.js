@@ -53,9 +53,16 @@ const startGame = catchAsync(async (req, res) => {
   res.send({ room });
 });
 
+const leaveGame = catchAsync(async (req, res) => {
+  const { roomName, playerId } = req.body;
+  const room = await roomService.removeUser(roomName, playerId);
+  res.send({ message: 'OK' });
+});
+
 module.exports = {
   createRoom,
   joinRoom,
   getRoom,
   startGame,
+  leaveGame,
 };

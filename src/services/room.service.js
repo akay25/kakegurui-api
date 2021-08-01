@@ -53,7 +53,7 @@ const joinRoom = async (roomName, user) => {
   // TODO: Add user to the socket room
   room.players.push(user);
   await room.save();
-  return room;
+  return { room, player: user };
 };
 
 /**

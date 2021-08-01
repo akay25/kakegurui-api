@@ -5,8 +5,19 @@ const catchAsync = require('../utils/catchAsync');
 const { roomService, userService } = require('../services');
 
 const createRoom = catchAsync(async (req, res) => {
-  const room = await roomService.createRoom();
-  res.status(httpStatus.CREATED).send(room);
+  const newRoom = await roomService.createRoom();
+  const { name, profilePic } = req.body;
+  const user = {
+    id: uuidv4(),
+    name,
+    profilePic,
+    score: 0.0,
+    owner: false,
+  };
+
+  const response = await roomService.joinRoom(newRoom.name, user);
+  const token = await userService.createUserToken(response.room, user.id);
+  res.status(httpStatus.CREATED).send({ ...response, token });
 });
 
 const getRoom = catchAsync(async (req, res) => {
@@ -30,9 +41,9 @@ const joinRoom = catchAsync(async (req, res) => {
     owner: false,
   };
 
-  const room = await roomService.joinRoom(roomName, user);
-  const token = await userService.createUserToken(room, user.id);
-  res.send({ room, token });
+  const response = await roomService.joinRoom(roomName, user);
+  const token = await userService.createUserToken(response.room, user.id);
+  res.send({ ...response, token });
 });
 
 const startGame = catchAsync(async (req, res) => {

@@ -86,10 +86,15 @@ const removeUser = async (roomName, playerId) => {
   }
 
   const newPlayers = room.players.filter((p) => p.id !== playerId);
-  newPlayers[0].owner = true;
-  room.players = newPlayers;
-  await room.save();
-  return room;
+  if (newPlayers.length > 0) {
+    newPlayers[0].owner = true;
+    room.players = newPlayers;
+    await room.save();
+    return room;
+  } else {
+    await room.remove();
+  }
+  return true;
 };
 
 module.exports = {

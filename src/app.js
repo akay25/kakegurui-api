@@ -18,6 +18,7 @@ const ApiError = require('./utils/ApiError');
 
 const app = express();
 const http = require('http');
+const { getRoomById } = require('./services/room.service');
 
 app.get('/', (req, res) => {
   res.send('<h1>Hello world</h1>');
@@ -104,22 +105,27 @@ io.use((socket, next) => {
 // Load socket routes
 io.on('connection', function (socket) {
   // Join room event
-  socket.on('join_room', function () {
+  socket.on('join_room', async function () {
     const user = socket.request.user;
     // Make the user join the given room
     socket.join(user.roomId);
+
+    const room = await getRoomById(user.roomId);
     // Send broad cast event to all members
-    socket.to(user.roomId).emit('room_updated', user);
+    socket.to(user.roomId).emit('room_updated', room);
     socket.emit('room_joined');
   });
 
   // Leave room event
-  socket.on('leave_room', function () {
+  socket.on('leave_room', async function () {
     const user = socket.request.user;
     // Make the user join the given room
     socket.leave(user.roomId);
+
+    const room = await getRoomById(user.roomId);
     // Send broad cast event to all members
-    socket.to(user.roomId).emit('room_updated', user);
+    socket.to(user.roomId).emit('room_updated', room);
+    // Send broad cast event to all members
     socket.emit('room_left');
   });
 

@@ -13,7 +13,7 @@ const createRoom = async () => {
   while (!Room.isNameTaken(roomName)) {
     roomName = randomNameGenerate();
   }
-  // TODO: Create socket room as well
+
   return Room.create({ name: roomName });
 };
 
@@ -50,7 +50,7 @@ const joinRoom = async (roomName, user) => {
   if (room.players.length == 0) {
     user.owner = true;
   }
-  // TODO: Add user to the socket room
+
   room.players.push(user);
   await room.save();
   return { room, player: user };

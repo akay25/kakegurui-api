@@ -27,6 +27,8 @@ const getRoom = catchAsync(async (req, res) => {
   } else {
     room = await roomService.getRoomByName(req.params.roomId);
   }
+  room.player = room.players[room.currentPlayer];
+  room.totalCards = 104;
   res.send(room);
 });
 

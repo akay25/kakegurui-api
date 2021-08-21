@@ -20,6 +20,15 @@ const roomSchema = mongoose.Schema(
       type: [Object],
       default: [],
     },
+    cards: {
+      type: [Object],
+      default: [],
+      select: false,
+    },
+    currentPlayer: {
+      type: Number,
+      default: -1,
+    },
   },
   {
     timestamps: true,

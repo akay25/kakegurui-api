@@ -1,9 +1,10 @@
 const httpStatus = require('http-status');
 const { Room } = require('../models');
-const { statuses } = require('../config/statuses');
+const { allStatuses, statuses } = require('../config/statuses');
 const ApiError = require('../utils/ApiError');
 const randomNameGenerate = require('../utils/randomName');
-const socketIO = require('../socket-io')();
+const getCardsDeck = require('../utils/cards');
+const _ = require('lodash');
 
 /**
  * Create a user
@@ -68,18 +69,20 @@ const startGame = async (roomName) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Room not found');
   }
 
-  room.status = statuses[1];
-
   if (room.players.length < 2) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Cannot start game with only one player');
   }
 
-  // socketIO.to(room.name).emit('game_started', 'ranbdom data');
-  // // TODO: Start game from socket
-  console.log(global['_io']);
-  // await room.save();
+  room.cards = getCardsDeck();
+  room.currentPlayer = Math.floor(Math.random() * room.players.length);
+  room.status = statuses[1];
 
-  return room;
+  await room.save();
+
+  const socketIO = global['_io'];
+  socketIO.to(room.id).emit('game_started', { player: room.players[room.currentPlayer], totalCards: room.cards.length });
+
+  return { message: 'OK' };
 };
 
 /**

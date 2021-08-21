@@ -7,4 +7,5 @@ const statuses = Object.keys(allStatuses);
 
 module.exports = {
   statuses,
+  allStatuses,
 };

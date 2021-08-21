@@ -3,6 +3,7 @@ const { Room } = require('../models');
 const { statuses } = require('../config/statuses');
 const ApiError = require('../utils/ApiError');
 const randomNameGenerate = require('../utils/randomName');
+const socketIO = require('../socket-io')();
 
 /**
  * Create a user
@@ -68,8 +69,16 @@ const startGame = async (roomName) => {
   }
 
   room.status = statuses[1];
-  // TODO: Start game from socket
-  await room.save();
+
+  if (room.players.length < 2) {
+    throw new ApiError(httpStatus.FORBIDDEN, 'Cannot start game with only one player');
+  }
+
+  // socketIO.to(room.name).emit('game_started', 'ranbdom data');
+  // // TODO: Start game from socket
+  console.log(global['_io']);
+  // await room.save();
+
   return room;
 };
 

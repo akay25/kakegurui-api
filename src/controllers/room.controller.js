@@ -48,9 +48,8 @@ const joinRoom = catchAsync(async (req, res) => {
 
 const startGame = catchAsync(async (req, res) => {
   const { roomName } = req.body;
-  const room = await roomService.startGame(roomName);
-  // TODO: Start socket serving from here
-  res.send({ room });
+  const response = await roomService.startGame(roomName);
+  res.send({ response });
 });
 
 const leaveGame = catchAsync(async (req, res) => {

@@ -1,5 +1,6 @@
 const socketIO = require('socket.io');
 const socketAuthMiddleware = require('./middlewares/socketAuth');
+const { getCardsFromRoom } = require('./services/room.service');
 
 module.exports = function (server) {
   if (global['_io'] === undefined) {
@@ -17,6 +18,7 @@ module.exports = function (server) {
 
     const isValidSocketRequest = (socket) => {
       // TODO: CHeck for user and room and do forward
+      // TODO: Check for uiser action with player's turn
       // console.log(token);
       return true;
     };
@@ -56,6 +58,22 @@ module.exports = function (server) {
         socket.to(user.roomId).emit('room_updated', room);
         // Send broad cast event to all members
         socket.emit('room_left');
+      });
+
+      // Flip the card
+      socket.on('i_flipped_card', function (data) {
+        // TODO: User can flip only twice, then it's next player's turn
+        const user = socket.request.user;
+        socket.to(user.roomId).emit('card_flipped', data);
+      });
+
+      // Set back image
+      socket.on('ask_for_back_image', async function (cardIndex) {
+        const user = socket.request.user;
+        const room = await getCardsFromRoom(user.roomId);
+        if (cardIndex >= 0 && cardIndex < room.cards.length) {
+          socket.emit('set_back_image', room.cards[cardIndex]);
+        }
       });
 
       // Socket disconnect

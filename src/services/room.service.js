@@ -87,6 +87,16 @@ const startGame = async (roomName) => {
 
 /**
  * Leave room by person
+ * @param {String} roomId
+ * @returns {Promise<Card>}
+ */
+const getCardsFromRoom = async (roomId) => {
+  const room = await Room.findById(roomId, 'cards');
+  return room;
+};
+
+/**
+ * Leave room by person
  * @param {String} roomName
  * * @param {String} playerId
  * @returns {Promise<Room>}
@@ -116,4 +126,5 @@ module.exports = {
   joinRoom,
   startGame,
   removeUser,
+  getCardsFromRoom,
 };

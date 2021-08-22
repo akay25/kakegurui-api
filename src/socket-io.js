@@ -65,46 +65,44 @@ module.exports = function (server) {
         const user = socket.request.user;
         const room = await getRoomById(user.roomId, true);
 
-        // TODO: Check if current user can flip the card or not
+        // Check if current user can flip the card or not
+        if (room.players[room.currentPlayer].id === user.id) {
+          // Use operation only card is flipped upside
+          if (card.direction === 'up') {
+            if (room.prevSelectedCard === -1 || room.prevSelectedCard === card.cardIndex) {
+              room.prevSelectedCard = card.cardIndex;
+              room.save();
+            } else if (room.prevSelectedCard !== -1 || room.prevSelectedCard !== card.cardIndex) {
+              // No flipping of any kind in here
+              room.selectedCard = card.cardIndex;
+              if (room.cards[room.selectedCard] === room.cards[room.prevSelectedCard]) {
+                // Cards matched, user won the two cards
 
-        // Use operation only card is flipped upside
-        if (card.direction === 'up') {
-          if (room.prevSelectedCard === -1 || room.prevSelectedCard === card.cardIndex) {
-            room.prevSelectedCard = card.cardIndex;
-            room.save();
-          } else if (room.prevSelectedCard !== -1 || room.prevSelectedCard !== card.cardIndex) {
-            // No flipping of any kind in here
-            room.selectedCard = card.cardIndex;
-            if (room.cards[room.selectedCard] === room.cards[room.prevSelectedCard]) {
-              // Cards matched, user won the two cards
+                // Remove cards from main room
+                room.removedCardIndices.push(room.selectedCard);
+                room.removedCardIndices.push(room.prevSelectedCard);
 
-              // Remove cards from main room
-              room.removedCardIndices.push(room.selectedCard);
-              room.removedCardIndices.push(room.prevSelectedCard);
+                // TODO: Emit cards are removed
 
-              // TODO: Emit cards are removed
+                // Increase user score
+                room.players[room.currentPlayer].score += 2;
+                // TODO: Emit user score
 
-              // Increase user score
-              room.players[room.currentPlayer].score += 2;
-              // TODO: Emit user score
-
-              await room.save();
-              if (room.cards.length === room.removedCardIndices.length) {
-                // Game is finished
-                // TODO: Emit show leader board
+                await room.save();
+                if (room.cards.length === room.removedCardIndices.length) {
+                  // Game is finished
+                  // TODO: Emit show leader board
+                }
+              } else {
+                await updatePlayerForRoom(room.id);
               }
-            } else {
-              room.currentPlayer++;
-              if (room.currentPlayer >= room.players.length) {
-                room.currentPlayer = 0;
-              }
-              await room.save();
-              // TODO: Next player's turn
+              return;
             }
-            return;
           }
+          socket.to(user.roomId).emit('card_flipped', card);
+        } else {
+          socket.emit('not_your_turn', { message: 'Not your turn' });
         }
-        socket.to(user.roomId).emit('card_flipped', card);
       });
 
       // Set back image

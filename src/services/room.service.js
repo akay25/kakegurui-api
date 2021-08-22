@@ -6,6 +6,7 @@ const ApiError = require('../utils/ApiError');
 const randomNameGenerate = require('../utils/randomName');
 const getCardsDeck = require('../utils/cards');
 const _ = require('lodash');
+const PlayerNotifier = require('../models/playerNotifier.model');
 
 /**
  * Create a user
@@ -119,6 +120,9 @@ const startGame = async (roomName) => {
     totalCards: room.cards.length,
     removedCardIndices: room.removedCardIndices,
   });
+  const notifier = new PlayerNotifier();
+  notifier._id = room.id;
+  await notifier.save();
 
   return { message: 'OK' };
 };
@@ -167,6 +171,32 @@ const getCardsFromRoom = async (roomId, cardIndex) => {
   return null;
 };
 
+/**
+ * Get card from room
+ * @param {String} roomID
+ */
+const updatePlayerForRoom = async (roomId) => {
+  const room = await getRoomById(roomId);
+
+  if (room) {
+    // TODO: Emit close all cards
+    room.selectedCard = -1;
+    room.prevSelectedCard = -1;
+    room.currentPlayer++;
+    if (room.currentPlayer >= room.players.length) {
+      room.currentPlayer = 0;
+    }
+    const notifier = new PlayerNotifier();
+    notifier._id = room.id;
+    await notifier.save();
+    await room.save();
+    const socketIO = global['_io'];
+    socketIO.to(room.id).emit('player_changed', room.currentPlayer);
+  }
+
+  return null;
+};
+
 module.exports = {
   createRoom,
   getRoomById,
@@ -175,4 +205,5 @@ module.exports = {
   startGame,
   removeUser,
   getCardsFromRoom,
+  updatePlayerForRoom,
 };

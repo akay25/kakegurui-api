@@ -37,4 +37,5 @@ module.exports = {
   },
   MAX_DECK_RANGE: 28,
   TOTAL_CARDS_SIZE: 104,
+  MAX_WAIT_FOR_PLAYER: 120,
 };

@@ -45,6 +45,9 @@ const roomSchema = mongoose.Schema(
       type: [Number],
       default: [],
     },
+    nextTurnTime: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

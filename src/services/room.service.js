@@ -107,6 +107,9 @@ const startGame = async (roomName) => {
 
   // Select a random player
   room.currentPlayer = Math.floor(Math.random() * room.players.length);
+  const t = new Date();
+  t.setSeconds(t.getSeconds() + config.MAX_WAIT_FOR_PLAYER);
+  room.nextTurnTime = t;
 
   // Start the game
   room.status = statuses[1];
@@ -119,6 +122,7 @@ const startGame = async (roomName) => {
     deckRange: room.deckRange,
     totalCards: room.cards.length,
     removedCardIndices: room.removedCardIndices,
+    nextTurnTime: t,
   });
   const notifier = new PlayerNotifier();
   notifier._id = room.id;
@@ -186,12 +190,15 @@ const updatePlayerForRoom = async (roomId) => {
     if (room.currentPlayer >= room.players.length) {
       room.currentPlayer = 0;
     }
+    const t = new Date();
+    t.setSeconds(t.getSeconds() + config.MAX_WAIT_FOR_PLAYER);
+    room.nextTurnTime = t;
     const notifier = new PlayerNotifier();
     notifier._id = room.id;
     await notifier.save();
     await room.save();
     const socketIO = global['_io'];
-    socketIO.to(room.id).emit('player_changed', room.currentPlayer);
+    socketIO.to(room.id).emit('player_changed', { player: room.players[room.currentPlayer], nextTurnTime: t });
   }
 
   return null;

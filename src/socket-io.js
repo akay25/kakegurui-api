@@ -65,6 +65,8 @@ module.exports = function (server) {
         const user = socket.request.user;
         const room = await getRoomById(user.roomId, true);
 
+        // TODO: Check if current user can flip the card or not
+
         // Use operation only card is flipped upside
         if (card.direction === 'up') {
           if (room.prevSelectedCard === -1 || room.prevSelectedCard === card.cardIndex) {
@@ -75,9 +77,29 @@ module.exports = function (server) {
             room.selectedCard = card.cardIndex;
             if (room.cards[room.selectedCard] === room.cards[room.prevSelectedCard]) {
               // Cards matched, user won the two cards
-              console.log('user won');
+
+              // Remove cards from main room
+              room.removedCardIndices.push(room.selectedCard);
+              room.removedCardIndices.push(room.prevSelectedCard);
+
+              // TODO: Emit cards are removed
+
+              // Increase user score
+              room.players[room.currentPlayer].score += 2;
+              // TODO: Emit user score
+
+              await room.save();
+              if (room.cards.length === room.removedCardIndices.length) {
+                // Game is finished
+                // TODO: Emit show leader board
+              }
             } else {
-              console.log('next playuers truun');
+              room.currentPlayer++;
+              if (room.currentPlayer >= room.players.length) {
+                room.currentPlayer = 0;
+              }
+              await room.save();
+              // TODO: Next player's turn
             }
             return;
           }
@@ -91,7 +113,7 @@ module.exports = function (server) {
         const user = socket.request.user;
         const cardURL = await getCardsFromRoom(user.roomId, cardIndex);
         if (!!cardURL) {
-          socket.emit('set_back_image', cardURL);
+          socket.emit(`set_back_image_${cardIndex}`, cardURL);
         }
       });
 

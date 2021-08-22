@@ -1,6 +1,7 @@
 const httpStatus = require('http-status');
+const config = require('../config/config');
 const { Room } = require('../models');
-const { allStatuses, statuses } = require('../config/statuses');
+const { statuses } = require('../config/statuses');
 const ApiError = require('../utils/ApiError');
 const randomNameGenerate = require('../utils/randomName');
 const getCardsDeck = require('../utils/cards');
@@ -24,8 +25,17 @@ const createRoom = async () => {
  * @param {ObjectId} id
  * @returns {Promise<Room>}
  */
-const getRoomById = async (id) => {
-  return Room.findById(id);
+const getRoomById = async (id, withCards = false) => {
+  if (withCards) {
+    return await Room.findById(id, 'cards deckRange');
+  }
+  const room = await Room.findById(id);
+  // If game has already started then send some extra information as well
+  if (room.status === statuses[1]) {
+    room.player = room.players[room.currentPlayer];
+    room.totalCards = config.TOTAL_CARDS_SIZE;
+  }
+  return room;
 };
 
 /**
@@ -34,7 +44,13 @@ const getRoomById = async (id) => {
  * @returns {Promise<Room>}
  */
 const getRoomByName = async (name) => {
-  return Room.findOne({ name });
+  const room = await Room.findOne({ name });
+  // If game has already started then send some extra information as well
+  if (room.status === statuses[1]) {
+    room.player = room.players[room.currentPlayer];
+    room.totalCards = config.TOTAL_CARDS_SIZE;
+  }
+  return room;
 };
 
 /**
@@ -55,6 +71,13 @@ const joinRoom = async (roomName, user) => {
 
   room.players.push(user);
   await room.save();
+
+  // If game has already started then send some extra information as well
+  if (room.status === statuses[1]) {
+    room.player = room.players[room.currentPlayer];
+    room.totalCards = config.TOTAL_CARDS_SIZE;
+  }
+
   return { room, player: user };
 };
 
@@ -69,30 +92,32 @@ const startGame = async (roomName) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Room not found');
   }
 
+  // Don't start the game, if the player count is less than 2
   if (room.players.length < 2) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Cannot start game with only one player');
   }
 
+  // Generate new cards deck
   room.cards = getCardsDeck();
-  room.currentPlayer = Math.floor(Math.random() * room.players.length);
-  room.status = statuses[1];
+  room.deckRange = config.MAX_DECK_RANGE;
 
+  // Select a random player
+  room.currentPlayer = Math.floor(Math.random() * room.players.length);
+
+  // Start the game
+  room.status = statuses[1];
   await room.save();
 
+  // Tell all connected players, that game has been started
   const socketIO = global['_io'];
-  socketIO.to(room.id).emit('game_started', { player: room.players[room.currentPlayer], totalCards: room.cards.length });
+  socketIO.to(room.id).emit('game_started', {
+    player: room.players[room.currentPlayer],
+    deckRange: room.deckRange,
+    totalCards: room.cards.length,
+    removedCardIndices: room.removedCardIndices,
+  });
 
   return { message: 'OK' };
-};
-
-/**
- * Leave room by person
- * @param {String} roomId
- * @returns {Promise<Card>}
- */
-const getCardsFromRoom = async (roomId) => {
-  const room = await Room.findById(roomId, 'cards');
-  return room;
 };
 
 /**
@@ -117,6 +142,26 @@ const removeUser = async (roomName, playerId) => {
     await room.remove();
   }
   return true;
+};
+
+/**
+ * Get card from room
+ * @param {String} roomName
+ * * @param {String} cardIndex
+ * @returns {Promise<String>}
+ */
+const getCardsFromRoom = async (roomId, cardIndex) => {
+  const room = await getRoomById(roomId, true);
+
+  if (!room) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Room not found');
+  }
+
+  if (cardIndex >= 0 && cardIndex < room.deckRange) {
+    return room.cards[cardIndex];
+  }
+
+  return null;
 };
 
 module.exports = {

@@ -35,4 +35,6 @@ module.exports = {
     secret: envVars.JWT_SECRET,
     accessExpirationMinutes: envVars.JWT_ACCESS_EXPIRATION_MINUTES,
   },
+  MAX_DECK_RANGE: 28,
+  TOTAL_CARDS_SIZE: 104,
 };

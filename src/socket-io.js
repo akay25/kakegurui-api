@@ -70,9 +70,9 @@ module.exports = function (server) {
       // Set back image
       socket.on('ask_for_back_image', async function (cardIndex) {
         const user = socket.request.user;
-        const room = await getCardsFromRoom(user.roomId);
-        if (cardIndex >= 0 && cardIndex < room.cards.length) {
-          socket.emit('set_back_image', room.cards[cardIndex]);
+        const cardURL = await getCardsFromRoom(user.roomId, cardIndex);
+        if (!!cardURL) {
+          socket.emit('set_back_image', cardURL);
         }
       });
 

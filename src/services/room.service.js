@@ -27,7 +27,10 @@ const createRoom = async () => {
  */
 const getRoomById = async (id, withCards = false) => {
   if (withCards) {
-    return await Room.findById(id, 'cards deckRange');
+    return await Room.findById(
+      id,
+      'name status players cards deckRange currentPlayer selectedCard prevSelectedCard removedCardIndices'
+    );
   }
   const room = await Room.findById(id);
   // If game has already started then send some extra information as well

@@ -61,14 +61,33 @@ module.exports = function (server) {
       });
 
       // Flip the card
-      socket.on('i_flipped_card', function (data) {
-        // TODO: User can flip only twice, then it's next player's turn
+      socket.on('i_flipped_card', async function (card) {
         const user = socket.request.user;
-        socket.to(user.roomId).emit('card_flipped', data);
+        const room = await getRoomById(user.roomId, true);
+
+        // Use operation only card is flipped upside
+        if (card.direction === 'up') {
+          if (room.prevSelectedCard === -1 || room.prevSelectedCard === card.cardIndex) {
+            room.prevSelectedCard = card.cardIndex;
+            room.save();
+          } else if (room.prevSelectedCard !== -1 || room.prevSelectedCard !== card.cardIndex) {
+            // No flipping of any kind in here
+            room.selectedCard = card.cardIndex;
+            if (room.cards[room.selectedCard] === room.cards[room.prevSelectedCard]) {
+              // Cards matched, user won the two cards
+              console.log('user won');
+            } else {
+              console.log('next playuers truun');
+            }
+            return;
+          }
+        }
+        socket.to(user.roomId).emit('card_flipped', card);
       });
 
       // Set back image
       socket.on('ask_for_back_image', async function (cardIndex) {
+        // TODO: Check if user can ask for picture
         const user = socket.request.user;
         const cardURL = await getCardsFromRoom(user.roomId, cardIndex);
         if (!!cardURL) {

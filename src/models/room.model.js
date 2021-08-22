@@ -25,9 +25,25 @@ const roomSchema = mongoose.Schema(
       default: [],
       select: false,
     },
+    deckRange: {
+      type: Number,
+      default: 21,
+    },
     currentPlayer: {
       type: Number,
       default: -1,
+    },
+    selectedCard: {
+      type: Number,
+      default: -1,
+    },
+    prevSelectedCard: {
+      type: Number,
+      default: -1,
+    },
+    removedCardIndices: {
+      type: [Number],
+      default: [],
     },
   },
   {

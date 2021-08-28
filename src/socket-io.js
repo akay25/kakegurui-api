@@ -60,59 +60,82 @@ module.exports = function (server) {
         socket.emit('room_left');
       });
 
-      // Flip the card
-      socket.on('i_flipped_card', async function (card) {
+      socket.on('ask_for_card_flip', async function (card) {
         const user = socket.request.user;
         const room = await getRoomById(user.roomId, true);
 
         // Check if current user can flip the card or not
         if (room.players[room.currentPlayer].id === user.id) {
-          // Use operation only card is flipped upside
           if (card.direction === 'up') {
-            if (room.prevSelectedCard === -1 || room.prevSelectedCard === card.cardIndex) {
-              room.prevSelectedCard = card.cardIndex;
-              room.save();
-            } else if (room.prevSelectedCard !== -1 || room.prevSelectedCard !== card.cardIndex) {
+            const cardImageURL = card.id >= 0 && card.id < room.deckRange ? room.cards[card.id] : null;
+            if (room.prevSelectedCard === -1 || room.prevSelectedCard === card.id) {
+              room.prevSelectedCard = card.id;
+              await room.save();
+              // Emit opened card to all users
+              io.to(user.roomId).emit('flip_card', {
+                ...card,
+                image: cardImageURL,
+              });
+              return;
+            } else if (
+              room.prevSelectedCard !== -1 &&
+              room.prevSelectedCard !== card.id &&
+              (room.selectedCard === -1 || room.selectedCard === card.id)
+            ) {
               // No flipping of any kind in here
-              room.selectedCard = card.cardIndex;
+              room.selectedCard = card.id;
+              await room.save();
+              // Emit to only the user
+              socket.emit('flip_card', {
+                ...card,
+                image: cardImageURL,
+              });
+
               if (room.cards[room.selectedCard] === room.cards[room.prevSelectedCard]) {
+                console.log('Cards matched, user won');
                 // Cards matched, user won the two cards
 
                 // Remove cards from main room
-                room.removedCardIndices.push(room.selectedCard);
-                room.removedCardIndices.push(room.prevSelectedCard);
+                // room.removedCardIndices.push(room.selectedCard);
+                // room.removedCardIndices.push(room.prevSelectedCard);
 
+                // await room.save();
                 // TODO: Emit cards are removed
 
                 // Increase user score
-                room.players[room.currentPlayer].score += 2;
+                // room.players[room.currentPlayer].score += 2;
                 // TODO: Emit user score
-
-                await room.save();
                 if (room.cards.length === room.removedCardIndices.length) {
                   // Game is finished
                   // TODO: Emit show leader board
+                  console.log('Game finished');
                 }
+                return;
               } else {
-                console.log("this is called, player can;'t turn more cards");
-                await updatePlayerForRoom(room.id);
+                // Wait for a 3 sec and reset
+                console.log('I will wait for 3 sec and reset your chances');
+                return;
               }
-              return;
+            } else if (
+              room.prevSelectedCard !== -1 &&
+              room.prevSelectedCard !== card.id &&
+              room.selectedCard !== -1 &&
+              room.selectedCard !== card.id
+            ) {
+              socket.emit('wrong_card', { card1: room.prevSelectedCard, card2: room.selectedCard });
+            }
+          } else if (card.direction === 'down') {
+            if (room.prevSelectedCard === -1 || room.prevSelectedCard === card.id) {
+              // Emit closing of first card to everyone
+              io.to(user.roomId).emit('flip_card', card);
+            } else {
+              // Emit closing of second card to one person only
+              // Emit to only the user
+              socket.emit('flip_card', card);
             }
           }
-          socket.to(user.roomId).emit('card_flipped', card);
         } else {
-          socket.emit('not_your_turn', { message: 'Not your turn' });
-        }
-      });
-
-      // Set back image
-      socket.on('ask_for_back_image', async function (cardIndex) {
-        // TODO: Check if user can ask for picture
-        const user = socket.request.user;
-        const cardURL = await getCardsFromRoom(user.roomId, cardIndex);
-        if (!!cardURL) {
-          socket.emit(`set_back_image_${cardIndex}`, cardURL);
+          socket.to(user.roomId).emit('invalid_player_request', `${user.name} is requesting forbidden access to my vault`);
         }
       });
 

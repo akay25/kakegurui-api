@@ -94,6 +94,7 @@ module.exports = function (server) {
                   // TODO: Emit show leader board
                 }
               } else {
+                console.log("this is called, player can;'t turn more cards");
                 await updatePlayerForRoom(room.id);
               }
               return;

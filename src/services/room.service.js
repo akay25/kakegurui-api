@@ -6,7 +6,7 @@ const ApiError = require('../utils/ApiError');
 const randomNameGenerate = require('../utils/randomName');
 const getCardsDeck = require('../utils/cards');
 const _ = require('lodash');
-const PlayerNotifier = require('../models/playerNotifier.model');
+const { playerChangeQueue } = require('../workers/queues');
 
 /**
  * Create a user
@@ -40,6 +40,22 @@ const getRoomById = async (id, withCards = false) => {
     room.totalCards = config.TOTAL_CARDS_SIZE;
   }
   return room;
+};
+
+/**
+ * Get running room by id
+ * @param {ObjectId} id
+ * @returns {Promise<Room>}
+ */
+const getRunningRoomById = async (id) => {
+  const room = await Room.findById(id);
+
+  if (!!room && room.status === statuses[1]) {
+    room.player = room.players[room.currentPlayer];
+    room.totalCards = config.TOTAL_CARDS_SIZE;
+    return room;
+  }
+  return null;
 };
 
 /**
@@ -108,7 +124,7 @@ const startGame = async (roomName) => {
   // Select a random player
   room.currentPlayer = Math.floor(Math.random() * room.players.length);
   const t = new Date();
-  t.setSeconds(t.getSeconds() + config.MAX_WAIT_FOR_PLAYER);
+  t.setSeconds(t.getSeconds() + config.MAX_WAIT_FOR_PLAYER_IN_SECS);
   room.nextTurnTime = t;
 
   // Start the game
@@ -124,9 +140,9 @@ const startGame = async (roomName) => {
     removedCardIndices: room.removedCardIndices,
     nextTurnTime: t,
   });
-  const notifier = new PlayerNotifier();
-  notifier._id = room.id;
-  await notifier.save();
+
+  // On starting the game, start a cronjob
+  await playerChangeQueue.add({ roomId: room.id }, { delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000 });
 
   return { message: 'OK' };
 };
@@ -191,11 +207,11 @@ const updatePlayerForRoom = async (roomId) => {
       room.currentPlayer = 0;
     }
     const t = new Date();
-    t.setSeconds(t.getSeconds() + config.MAX_WAIT_FOR_PLAYER);
+    t.setSeconds(t.getSeconds() + config.MAX_WAIT_FOR_PLAYER_IN_SECS);
     room.nextTurnTime = t;
-    const notifier = new PlayerNotifier();
-    notifier._id = room.id;
-    await notifier.save();
+    // On starting the game, start a cronjob
+    await playerChangeQueue.add({ roomId: roomId }, { delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000 });
+
     await room.save();
     const socketIO = global['_io'];
     socketIO.to(room.id).emit('player_changed', { player: room.players[room.currentPlayer], nextTurnTime: t });
@@ -207,6 +223,7 @@ const updatePlayerForRoom = async (roomId) => {
 module.exports = {
   createRoom,
   getRoomById,
+  getRunningRoomById,
   getRoomByName,
   joinRoom,
   startGame,

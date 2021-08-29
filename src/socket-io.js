@@ -120,7 +120,23 @@ module.exports = function (server) {
                 room.selectedCard = -1;
                 await room.save();
 
-                // TODO: Clear existing job and resume player's turn
+                // Clear existing job
+                await QUEUES.playerChangeQueue.removeRepeatableByKey(room.bullMQJobKey);
+                const t = new Date();
+                t.setSeconds(t.getSeconds() + config.MAX_WAIT_FOR_PLAYER_IN_SECS);
+                room.nextTurnTime = t;
+
+                io.to(room.id).emit('player_changed', { player: room.players[room.currentPlayer], nextTurnTime: t });
+
+                // Re-add thee job if it's running
+                const queueResp = await QUEUES.playerChangeQueue.add(
+                  { roomId: room.id },
+                  {
+                    delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000,
+                  }
+                );
+                room.bullMQJobKey = queueResp.toKey();
+                await room.save();
 
                 socket.emit('set_score', room.players[room.currentPlayer].score);
                 if (room.cards.length === room.removedCardIndices.length) {

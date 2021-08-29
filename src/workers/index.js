@@ -26,7 +26,6 @@ QUEUES.playerChangeQueue.process(async function (job, done) {
     // Re-add thee job if it's running
     const queueResp = await QUEUES.playerChangeQueue.add(job.data, {
       delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000,
-      jobId: room.id,
     });
     room.bullMQJobKey = queueResp.toKey();
     await room.save();

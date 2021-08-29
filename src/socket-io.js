@@ -1,4 +1,6 @@
 const socketIO = require('socket.io');
+const QUEUES = require('./workers/queues');
+const config = require('./config/config');
 const socketAuthMiddleware = require('./middlewares/socketAuth');
 
 module.exports = function (server) {
@@ -116,13 +118,11 @@ module.exports = function (server) {
 
                 room.prevSelectedCard = -1;
                 room.selectedCard = -1;
-                try {
-                  await room.save();
-                } catch (e) {
-                  console.log('Savcing  doc erorr', e);
-                }
-                socket.emit('set_score', room.players[room.currentPlayer].score);
+                await room.save();
 
+                // TODO: Clear existing job and resume player's turn
+
+                socket.emit('set_score', room.players[room.currentPlayer].score);
                 if (room.cards.length === room.removedCardIndices.length) {
                   // Game is finished
                   // TODO: Emit show leader board
@@ -185,10 +185,43 @@ module.exports = function (server) {
       });
 
       socket.on('switch_turn', async function () {
-        // TODO: Clear previous job
-        // TODO: Close all open cards
-        // TODO: Switch player
-        console.log('swithibnbc turn');
+        const user = socket.request.user;
+        const room = await getRoomById(user.roomId);
+
+        // Check if current user can flip the card or not
+        if (room.players[room.currentPlayer].id === user.id) {
+          if (room.prevSelectedCard !== -1 && room.selectedCard !== -1 && room.selectedCard !== room.prevSelectedCard) {
+            // Clear existing job
+            await QUEUES.playerChangeQueue.removeRepeatableByKey(room.bullMQJobKey);
+
+            // Flip all cards down for all users
+            io.to(user.roomId).emit('flip_all_cards_down');
+
+            room.selectedCard = -1;
+            room.prevSelectedCard = -1;
+            room.currentPlayer++;
+            if (room.currentPlayer >= room.players.length) {
+              room.currentPlayer = 0;
+            }
+            const t = new Date();
+            t.setSeconds(t.getSeconds() + config.MAX_WAIT_FOR_PLAYER_IN_SECS);
+            room.nextTurnTime = t;
+
+            await room.save();
+
+            io.to(room.id).emit('player_changed', { player: room.players[room.currentPlayer], nextTurnTime: t });
+
+            // Re-add thee job if it's running
+            const queueResp = await QUEUES.playerChangeQueue.add(
+              { roomId: room.id },
+              {
+                delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000,
+              }
+            );
+            room.bullMQJobKey = queueResp.toKey();
+            await room.save();
+          }
+        }
       });
 
       // Socket disconnect

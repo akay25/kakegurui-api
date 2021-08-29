@@ -33,21 +33,18 @@ const getRoomById = async (id, withCards = false) => {
       'name status players cards deckRange currentPlayer selectedCard prevSelectedCard removedCardIndices'
     );
   }
-  try {
-    const room = await Room.findById(id);
-    if (!room) {
-      console.log('roonm nbot found ', id);
-      throw new ApiError(httpStatus.NOT_FOUND, 'Room not found');
-    }
-    // If game has already started then send some extra information as well
-    if (room.status === statuses[1]) {
-      room.player = room.players[room.currentPlayer];
-      room.totalCards = config.TOTAL_CARDS_SIZE;
-    }
-    return room;
-  } catch (e) {
-    console.log(e);
+
+  const room = await Room.findById(id);
+  if (!room) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Room not found');
   }
+
+  // If game has already started then send some extra information as well
+  if (room.status === statuses[1]) {
+    room.player = room.players[room.currentPlayer];
+    room.totalCards = config.TOTAL_CARDS_SIZE;
+  }
+  return room;
 };
 
 /**

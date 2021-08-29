@@ -22,7 +22,8 @@ const createRoom = catchAsync(async (req, res) => {
 
 const getRoom = catchAsync(async (req, res) => {
   let room = null;
-  if (ObjectId.isValid(req.params.roomId)) {
+  const isValidroomID = req.params.roomId.search('-') === -1 && ObjectId.isValid(req.params.roomId);
+  if (isValidroomID) {
     room = await roomService.getRoomById(req.params.roomId);
   } else {
     room = await roomService.getRoomByName(req.params.roomId);

@@ -121,21 +121,21 @@ module.exports = function (server) {
                 await room.save();
 
                 // Clear existing job
-                await QUEUES.playerChangeQueue.removeRepeatableByKey(room.bullMQJobKey);
+                // await QUEUES.playerChangeQueue.removeRepeatableByKey(room.bullMQJobKey);
                 const t = new Date();
                 t.setSeconds(t.getSeconds() + config.MAX_WAIT_FOR_PLAYER_IN_SECS);
                 room.nextTurnTime = t;
 
                 io.to(room.id).emit('player_changed', { player: room.players[room.currentPlayer], nextTurnTime: t });
 
-                // Re-add thee job if it's running
-                const queueResp = await QUEUES.playerChangeQueue.add(
-                  { roomId: room.id },
-                  {
-                    delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000,
-                  }
-                );
-                room.bullMQJobKey = queueResp.toKey();
+                // // Re-add thee job if it's running
+                // const queueResp = await QUEUES.playerChangeQueue.add(
+                //   { roomId: room.id },
+                //   {
+                //     delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000,
+                //   }
+                // );
+                // room.bullMQJobKey = queueResp.toKey();
                 await room.save();
 
                 socket.emit('set_score', room.players[room.currentPlayer].score);
@@ -208,7 +208,7 @@ module.exports = function (server) {
         if (room.players[room.currentPlayer].id === user.id) {
           if (room.prevSelectedCard !== -1 && room.selectedCard !== -1 && room.selectedCard !== room.prevSelectedCard) {
             // Clear existing job
-            await QUEUES.playerChangeQueue.removeRepeatableByKey(room.bullMQJobKey);
+            // await QUEUES.playerChangeQueue.removeRepeatableByKey(room.bullMQJobKey);
 
             // Flip all cards down for all users
             io.to(user.roomId).emit('flip_all_cards_down');
@@ -227,14 +227,14 @@ module.exports = function (server) {
 
             io.to(room.id).emit('player_changed', { player: room.players[room.currentPlayer], nextTurnTime: t });
 
-            // Re-add thee job if it's running
-            const queueResp = await QUEUES.playerChangeQueue.add(
-              { roomId: room.id },
-              {
-                delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000,
-              }
-            );
-            room.bullMQJobKey = queueResp.toKey();
+            // // Re-add thee job if it's running
+            // const queueResp = await QUEUES.playerChangeQueue.add(
+            //   { roomId: room.id },
+            //   {
+            //     delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000,
+            //   }
+            // );
+            // room.bullMQJobKey = queueResp.toKey();
             await room.save();
           }
         }

@@ -128,8 +128,8 @@ const startGame = async (roomName) => {
   room.nextTurnTime = t;
 
   // On starting the game, start a cronjob
-  const queueResp = await playerChangeQueue.add({ roomId: room.id }, { delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000 });
-  room.bullMQJobKey = queueResp.toKey();
+  // const queueResp = await playerChangeQueue.add({ roomId: room.id }, { delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000 });
+  // room.bullMQJobKey = queueResp.toKey();
 
   // Start the game
   room.status = statuses[1];

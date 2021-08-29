@@ -112,10 +112,15 @@ module.exports = function (server) {
 
                 // Increase user score
                 room.players[room.currentPlayer].score += 2;
+                room.markModified('players');
 
                 room.prevSelectedCard = -1;
                 room.selectedCard = -1;
-                await room.save();
+                try {
+                  await room.save();
+                } catch (e) {
+                  console.log('Savcing  doc erorr', e);
+                }
                 socket.emit('set_score', room.players[room.currentPlayer].score);
 
                 if (room.cards.length === room.removedCardIndices.length) {
@@ -126,7 +131,7 @@ module.exports = function (server) {
                 return;
               } else {
                 // Wait for a 3 sec and reset
-                console.log('I will wait for 3 sec and reset your turn');
+                socket.emit('switch_player', 3);
                 return;
               }
             } else if (
@@ -166,7 +171,7 @@ module.exports = function (server) {
           });
         }
         // Check if current user can flip the card or not
-        if (room.players[room.currentPlayer].id === user.id) {
+        if (!!room.players[room.currentPlayer] && room.players[room.currentPlayer].id === user.id) {
           if (room.selectedCard !== -1) {
             const image =
               room.selectedCard >= 0 && room.selectedCard < room.deckRange ? room.cards[room.selectedCard] : null;
@@ -177,6 +182,13 @@ module.exports = function (server) {
             });
           }
         }
+      });
+
+      socket.on('switch_turn', async function () {
+        // TODO: Clear previous job
+        // TODO: Close all open cards
+        // TODO: Switch player
+        console.log('swithibnbc turn');
       });
 
       // Socket disconnect

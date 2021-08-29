@@ -7,9 +7,9 @@ QUEUES.playerChangeQueue.process(async function (job, done) {
   const { data } = job;
   const socketIO = global['_io'];
   const room = await getRunningRoomById(data.roomId);
-  socketIO.to(room.id).emit('flip_all_cards_down');
 
   if (!!room) {
+    socketIO.to(room.id).emit('flip_all_cards_down');
     room.selectedCard = -1;
     room.prevSelectedCard = -1;
     room.currentPlayer++;

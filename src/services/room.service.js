@@ -36,6 +36,7 @@ const getRoomById = async (id, withCards = false) => {
 
   const room = await Room.findById(id);
   if (!room) {
+    console.log('looging fdor ===> ', id);
     throw new ApiError(httpStatus.NOT_FOUND, 'Room not found');
   }
 

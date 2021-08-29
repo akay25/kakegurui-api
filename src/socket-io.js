@@ -8,7 +8,7 @@ module.exports = function (server) {
     const { getRoomById } = require('./services/room.service');
     const io = socketIO(server, {
       cors: {
-        origin: 'http://localhost:8080',
+        origin: 'http://192.168.0.100:8080',
         methods: ['GET', 'POST'],
         credentials: true,
       },
@@ -65,111 +65,116 @@ module.exports = function (server) {
         const user = socket.request.user;
         const room = await getRoomById(user.roomId, true);
 
-        // Check if current user can flip the card or not
-        if (room.players[room.currentPlayer].id === user.id) {
-          if (card.direction === 'up') {
-            const cardImageURL = card.id >= 0 && card.id < room.deckRange ? room.cards[card.id] : null;
-            if (room.prevSelectedCard === -1 || room.prevSelectedCard === card.id) {
-              room.prevSelectedCard = card.id;
-              await room.save();
-              // Emit opened card to all users
-              io.to(user.roomId).emit('flip_card', {
-                ...card,
-                image: cardImageURL,
-              });
-              return;
-            } else if (
-              room.prevSelectedCard !== -1 &&
-              room.prevSelectedCard !== card.id &&
-              (room.selectedCard === -1 || room.selectedCard === card.id)
-            ) {
-              // No flipping of any kind in here
-              room.selectedCard = card.id;
-              await room.save();
-              // Emit to only the user
-              socket.emit('flip_card', {
-                ...card,
-                image: cardImageURL,
-              });
-
-              if (room.cards[room.selectedCard] === room.cards[room.prevSelectedCard]) {
-                io.to(user.roomId).emit('flip_card', {
-                  id: room.selectedCard,
-                  image: cardImageURL,
-                  directioon: 'up',
-                });
-                io.to(user.roomId).emit('flip_card', {
-                  id: room.prevSelectedCard,
-                  image: cardImageURL,
-                  directioon: 'up',
-                });
-                // Cards matched, user won the two cards
-                // Remove cards from main room
-                room.removedCardIndices.push(room.selectedCard);
-                room.removedCardIndices.push(room.prevSelectedCard);
-                // Increase deck range
-                room.deckRange += 2;
-                // Tell all to remove these two cards from their decks as well
-                io.to(user.roomId).emit('remove_cards', [room.prevSelectedCard, room.selectedCard]);
-
-                // Increase user score
-                room.players[room.currentPlayer].score += 2;
-                room.markModified('players');
-
-                room.prevSelectedCard = -1;
-                room.selectedCard = -1;
+        if (!!room) {
+          // Check if current user can flip the card or not
+          if (room.players[room.currentPlayer].id === user.id) {
+            if (card.direction === 'up') {
+              const cardImageURL = card.id >= 0 && card.id < room.deckRange ? room.cards[card.id] : null;
+              if (room.prevSelectedCard === -1 || room.prevSelectedCard === card.id) {
+                room.prevSelectedCard = card.id;
                 await room.save();
-
-                // Clear existing job
-                // await QUEUES.playerChangeQueue.removeRepeatableByKey(room.bullMQJobKey);
-                const t = new Date();
-                t.setSeconds(t.getSeconds() + config.MAX_WAIT_FOR_PLAYER_IN_SECS);
-                room.nextTurnTime = t;
-
-                io.to(room.id).emit('player_changed', { player: room.players[room.currentPlayer], nextTurnTime: t });
-
-                // // Re-add thee job if it's running
-                // const queueResp = await QUEUES.playerChangeQueue.add(
-                //   { roomId: room.id },
-                //   {
-                //     delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000,
-                //   }
-                // );
-                // room.bullMQJobKey = queueResp.toKey();
+                // Emit opened card to all users
+                io.to(user.roomId).emit('flip_card', {
+                  ...card,
+                  image: cardImageURL,
+                });
+                return;
+              } else if (
+                room.prevSelectedCard !== -1 &&
+                room.prevSelectedCard !== card.id &&
+                (room.selectedCard === -1 || room.selectedCard === card.id)
+              ) {
+                // No flipping of any kind in here
+                room.selectedCard = card.id;
                 await room.save();
+                // Emit to only the user
+                socket.emit('flip_card', {
+                  ...card,
+                  image: cardImageURL,
+                });
 
-                socket.emit('set_score', room.players[room.currentPlayer].score);
-                if (room.cards.length === room.removedCardIndices.length) {
-                  // Game is finished
-                  // TODO: Emit show leader board
-                  console.log('Game finished');
+                if (room.cards[room.selectedCard] === room.cards[room.prevSelectedCard]) {
+                  io.to(user.roomId).emit('flip_card', {
+                    id: room.selectedCard,
+                    image: cardImageURL,
+                    directioon: 'up',
+                  });
+                  io.to(user.roomId).emit('flip_card', {
+                    id: room.prevSelectedCard,
+                    image: cardImageURL,
+                    directioon: 'up',
+                  });
+                  // Cards matched, user won the two cards
+                  // Remove cards from main room
+                  room.removedCardIndices.push(room.selectedCard);
+                  room.removedCardIndices.push(room.prevSelectedCard);
+                  // Increase deck range
+                  room.deckRange += 2;
+                  // Tell all to refresh cards from their decks as well
+                  io.to(user.roomId).emit('remove_cards', {
+                    removedCards: room.removedCardIndices,
+                    deckSize: room.deckRange,
+                  });
+
+                  // Increase user score
+                  room.players[room.currentPlayer].score += 2;
+                  room.markModified('players');
+
+                  room.prevSelectedCard = -1;
+                  room.selectedCard = -1;
+                  await room.save();
+
+                  // Clear existing job
+                  // await QUEUES.playerChangeQueue.removeRepeatableByKey(room.bullMQJobKey);
+                  const t = new Date();
+                  t.setSeconds(t.getSeconds() + config.MAX_WAIT_FOR_PLAYER_IN_SECS);
+                  room.nextTurnTime = t;
+
+                  io.to(room.id).emit('player_changed', { player: room.players[room.currentPlayer], nextTurnTime: t });
+
+                  // // Re-add thee job if it's running
+                  // const queueResp = await QUEUES.playerChangeQueue.add(
+                  //   { roomId: room.id },
+                  //   {
+                  //     delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000,
+                  //   }
+                  // );
+                  // room.bullMQJobKey = queueResp.toKey();
+                  await room.save();
+
+                  socket.emit('set_score', room.players[room.currentPlayer].score);
+                  if (room.cards.length === room.removedCardIndices.length) {
+                    // Game is finished
+                    // TODO: Emit show leader board
+                    console.log('Game finished');
+                  }
+                  return;
+                } else {
+                  // Wait for a 3 sec and reset
+                  socket.emit('switch_player', 3);
+                  return;
                 }
-                return;
-              } else {
-                // Wait for a 3 sec and reset
-                socket.emit('switch_player', 3);
-                return;
+              } else if (
+                room.prevSelectedCard !== -1 &&
+                room.prevSelectedCard !== card.id &&
+                room.selectedCard !== -1 &&
+                room.selectedCard !== card.id
+              ) {
+                socket.emit('wrong_card', { card1: room.prevSelectedCard, card2: room.selectedCard });
               }
-            } else if (
-              room.prevSelectedCard !== -1 &&
-              room.prevSelectedCard !== card.id &&
-              room.selectedCard !== -1 &&
-              room.selectedCard !== card.id
-            ) {
-              socket.emit('wrong_card', { card1: room.prevSelectedCard, card2: room.selectedCard });
+            } else if (card.direction === 'down') {
+              if (room.prevSelectedCard === -1 || room.prevSelectedCard === card.id) {
+                // Emit closing of first card to everyone
+                io.to(user.roomId).emit('flip_card', card);
+              } else {
+                // Emit closing of second card to one person only
+                // Emit to only the user
+                socket.emit('flip_card', card);
+              }
             }
-          } else if (card.direction === 'down') {
-            if (room.prevSelectedCard === -1 || room.prevSelectedCard === card.id) {
-              // Emit closing of first card to everyone
-              io.to(user.roomId).emit('flip_card', card);
-            } else {
-              // Emit closing of second card to one person only
-              // Emit to only the user
-              socket.emit('flip_card', card);
-            }
+          } else {
+            socket.to(user.roomId).emit('invalid_player_request', `${user.name} is requesting forbidden access to my vault`);
           }
-        } else {
-          socket.to(user.roomId).emit('invalid_player_request', `${user.name} is requesting forbidden access to my vault`);
         }
       });
 
@@ -209,7 +214,7 @@ module.exports = function (server) {
         const room = await getRoomById(user.roomId);
 
         // Check if current user can flip the card or not
-        if (room.players[room.currentPlayer].id === user.id) {
+        if (!!room && room.players[room.currentPlayer].id === user.id) {
           if (room.prevSelectedCard !== -1 && room.selectedCard !== -1 && room.selectedCard !== room.prevSelectedCard) {
             // Clear existing job
             // await QUEUES.playerChangeQueue.removeRepeatableByKey(room.bullMQJobKey);

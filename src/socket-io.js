@@ -139,6 +139,33 @@ module.exports = function (server) {
         }
       });
 
+      socket.on('ask_for_flipped_cards', async function () {
+        const user = socket.request.user;
+        const room = await getRoomById(user.roomId, true);
+
+        if (room.prevSelectedCard !== -1) {
+          const image =
+            room.prevSelectedCard >= 0 && room.prevSelectedCard < room.deckRange ? room.cards[room.prevSelectedCard] : null;
+          socket.emit('flip_card', {
+            id: room.prevSelectedCard,
+            image,
+            direction: 'up',
+          });
+        }
+        // Check if current user can flip the card or not
+        if (room.players[room.currentPlayer].id === user.id) {
+          if (room.selectedCard !== -1) {
+            const image =
+              room.selectedCard >= 0 && room.selectedCard < room.deckRange ? room.cards[room.selectedCard] : null;
+            socket.emit('flip_card', {
+              id: room.selectedCard,
+              image,
+              direction: 'up',
+            });
+          }
+        }
+      });
+
       // Socket disconnect
       socket.on('disconnect', function () {
         const user = socket.request.user;

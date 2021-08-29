@@ -91,19 +91,33 @@ module.exports = function (server) {
               });
 
               if (room.cards[room.selectedCard] === room.cards[room.prevSelectedCard]) {
-                console.log('Cards matched, user won');
+                io.to(user.roomId).emit('flip_card', {
+                  id: room.selectedCard,
+                  image: cardImageURL,
+                  directioon: 'up',
+                });
+                io.to(user.roomId).emit('flip_card', {
+                  id: room.prevSelectedCard,
+                  image: cardImageURL,
+                  directioon: 'up',
+                });
                 // Cards matched, user won the two cards
-
                 // Remove cards from main room
-                // room.removedCardIndices.push(room.selectedCard);
-                // room.removedCardIndices.push(room.prevSelectedCard);
-
-                // await room.save();
-                // TODO: Emit cards are removed
+                room.removedCardIndices.push(room.selectedCard);
+                room.removedCardIndices.push(room.prevSelectedCard);
+                // Increase deck range
+                room.deckRange += 2;
+                // Tell all to remove these two cards from their decks as well
+                io.to(user.roomId).emit('remove_cards', [room.prevSelectedCard, room.selectedCard]);
 
                 // Increase user score
-                // room.players[room.currentPlayer].score += 2;
-                // TODO: Emit user score
+                room.players[room.currentPlayer].score += 2;
+
+                room.prevSelectedCard = -1;
+                room.selectedCard = -1;
+                await room.save();
+                socket.emit('set_score', room.players[room.currentPlayer].score);
+
                 if (room.cards.length === room.removedCardIndices.length) {
                   // Game is finished
                   // TODO: Emit show leader board
@@ -112,7 +126,7 @@ module.exports = function (server) {
                 return;
               } else {
                 // Wait for a 3 sec and reset
-                console.log('I will wait for 3 sec and reset your chances');
+                console.log('I will wait for 3 sec and reset your turn');
                 return;
               }
             } else if (

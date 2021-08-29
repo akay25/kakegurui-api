@@ -7,10 +7,6 @@ require('./socket-io');
 let server;
 mongoose.connect(config.mongoose.url, config.mongoose.options).then(async () => {
   logger.info('Connected to MongoDB');
-  try {
-    // Create collection else it will throw error
-    await mongoose.connection.createCollection('playernotifiers');
-  } catch (e) {}
   server = app.listen(config.port, () => {
     logger.info(`Listening to port ${config.port}`);
   });

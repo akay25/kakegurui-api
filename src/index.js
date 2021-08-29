@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const app = require('./app');
-const { updatePlayerForRoom } = require('./services/room.service');
 const config = require('./config/config');
 const logger = require('./config/logger');
 require('./socket-io');

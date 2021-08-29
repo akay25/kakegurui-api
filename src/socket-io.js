@@ -1,6 +1,5 @@
 const socketIO = require('socket.io');
 const socketAuthMiddleware = require('./middlewares/socketAuth');
-const { getCardsFromRoom } = require('./services/room.service');
 
 module.exports = function (server) {
   if (global['_io'] === undefined) {

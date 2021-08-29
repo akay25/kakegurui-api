@@ -5,8 +5,9 @@ const { getRunningRoomById } = require('../services/room.service');
 // WOrker code, will execute with the node server code1
 QUEUES.playerChangeQueue.process(async function (job, done) {
   const { data } = job;
-  // TODO: Emit close all cards
+  const socketIO = global['_io'];
   const room = await getRunningRoomById(data.roomId);
+  socketIO.to(room.id).emit('flip_all_cards_down');
 
   if (!!room) {
     room.selectedCard = -1;
@@ -20,7 +21,6 @@ QUEUES.playerChangeQueue.process(async function (job, done) {
     room.nextTurnTime = t;
 
     await room.save();
-    const socketIO = global['_io'];
 
     socketIO.to(room.id).emit('player_changed', { player: room.players[room.currentPlayer], nextTurnTime: t });
     // Re-add thee job if it's running

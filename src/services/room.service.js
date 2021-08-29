@@ -171,55 +171,6 @@ const removeUser = async (roomName, playerId) => {
   return true;
 };
 
-/**
- * Get card from room
- * @param {String} roomName
- * * @param {String} cardIndex
- * @returns {Promise<String>}
- */
-const getCardsFromRoom = async (roomId, cardIndex) => {
-  const room = await getRoomById(roomId, true);
-
-  if (!room) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Room not found');
-  }
-
-  if (cardIndex >= 0 && cardIndex < room.deckRange) {
-    return room.cards[cardIndex];
-  }
-
-  return null;
-};
-
-/**
- * Get card from room
- * @param {String} roomID
- */
-const updatePlayerForRoom = async (roomId) => {
-  const room = await getRoomById(roomId);
-
-  if (room) {
-    // TODO: Emit close all cards
-    room.selectedCard = -1;
-    room.prevSelectedCard = -1;
-    room.currentPlayer++;
-    if (room.currentPlayer >= room.players.length) {
-      room.currentPlayer = 0;
-    }
-    const t = new Date();
-    t.setSeconds(t.getSeconds() + config.MAX_WAIT_FOR_PLAYER_IN_SECS);
-    room.nextTurnTime = t;
-    // On starting the game, start a cronjob
-    await playerChangeQueue.add({ roomId: roomId }, { delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000 });
-
-    await room.save();
-    const socketIO = global['_io'];
-    socketIO.to(room.id).emit('player_changed', { player: room.players[room.currentPlayer], nextTurnTime: t });
-  }
-
-  return null;
-};
-
 module.exports = {
   createRoom,
   getRoomById,
@@ -228,6 +179,4 @@ module.exports = {
   joinRoom,
   startGame,
   removeUser,
-  getCardsFromRoom,
-  updatePlayerForRoom,
 };

@@ -127,6 +127,13 @@ const startGame = async (roomName) => {
   t.setSeconds(t.getSeconds() + config.MAX_WAIT_FOR_PLAYER_IN_SECS);
   room.nextTurnTime = t;
 
+  // On starting the game, start a cronjob
+  const queueResp = await playerChangeQueue.add(
+    { roomId: room.id },
+    { delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000, jobId: room.id }
+  );
+  room.bullMQJobKey = queueResp.toKey();
+
   // Start the game
   room.status = statuses[1];
   await room.save();
@@ -140,9 +147,6 @@ const startGame = async (roomName) => {
     removedCardIndices: room.removedCardIndices,
     nextTurnTime: t,
   });
-
-  // On starting the game, start a cronjob
-  await playerChangeQueue.add({ roomId: room.id }, { delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000 });
 
   return { message: 'OK' };
 };

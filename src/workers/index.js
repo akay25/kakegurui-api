@@ -24,7 +24,12 @@ QUEUES.playerChangeQueue.process(async function (job, done) {
 
     socketIO.to(room.id).emit('player_changed', { player: room.players[room.currentPlayer], nextTurnTime: t });
     // Re-add thee job if it's running
-    await QUEUES.playerChangeQueue.add(job.data, { delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000 });
+    const queueResp = await QUEUES.playerChangeQueue.add(job.data, {
+      delay: config.MAX_WAIT_FOR_PLAYER_IN_SECS * 1000,
+      jobId: room.id,
+    });
+    room.bullMQJobKey = queueResp.toKey();
+    await room.save();
   }
 
   // call done when finished

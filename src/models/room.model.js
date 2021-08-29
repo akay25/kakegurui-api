@@ -48,6 +48,10 @@ const roomSchema = mongoose.Schema(
     nextTurnTime: {
       type: Date,
     },
+    bullMQJobKey: {
+      type: String,
+      default: '',
+    },
   },
   {
     timestamps: true,

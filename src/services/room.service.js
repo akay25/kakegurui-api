@@ -33,13 +33,21 @@ const getRoomById = async (id, withCards = false) => {
       'name status players cards deckRange currentPlayer selectedCard prevSelectedCard removedCardIndices'
     );
   }
-  const room = await Room.findById(id);
-  // If game has already started then send some extra information as well
-  if (room.status === statuses[1]) {
-    room.player = room.players[room.currentPlayer];
-    room.totalCards = config.TOTAL_CARDS_SIZE;
+  try {
+    const room = await Room.findById(id);
+    if (!room) {
+      console.log('roonm nbot found ', id);
+      throw new ApiError(httpStatus.NOT_FOUND, 'Room not found');
+    }
+    // If game has already started then send some extra information as well
+    if (room.status === statuses[1]) {
+      room.player = room.players[room.currentPlayer];
+      room.totalCards = config.TOTAL_CARDS_SIZE;
+    }
+    return room;
+  } catch (e) {
+    console.log(e);
   }
-  return room;
 };
 
 /**
@@ -64,13 +72,17 @@ const getRunningRoomById = async (id) => {
  * @returns {Promise<Room>}
  */
 const getRoomByName = async (name) => {
-  const room = await Room.findOne({ name });
-  // If game has already started then send some extra information as well
-  if (room.status === statuses[1]) {
-    room.player = room.players[room.currentPlayer];
-    room.totalCards = config.TOTAL_CARDS_SIZE;
+  try {
+    const room = await Room.findOne({ name });
+    // If game has already started then send some extra information as well
+    if (room.status === statuses[1]) {
+      room.player = room.players[room.currentPlayer];
+      room.totalCards = config.TOTAL_CARDS_SIZE;
+    }
+    return room;
+  } catch (e) {
+    throw e;
   }
-  return room;
 };
 
 /**
@@ -164,6 +176,7 @@ const removeUser = async (roomName, playerId) => {
   if (newPlayers.length > 0) {
     newPlayers[0].owner = true;
     room.players = newPlayers;
+    room.markModified('players');
     await room.save();
     return room;
   } else {

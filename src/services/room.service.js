@@ -37,7 +37,8 @@ const getRoomById = async (id, withCards = false) => {
   const room = await Room.findById(id);
   if (!room) {
     console.log('looging fdor ===> ', id);
-    throw new ApiError(httpStatus.NOT_FOUND, 'Room not found');
+    // throw new ApiError(httpStatus.NOT_FOUND, 'Room not found');
+    return null;
   }
 
   // If game has already started then send some extra information as well
@@ -150,6 +151,7 @@ const startGame = async (roomName) => {
   // Tell all connected players, that game has been started
   const socketIO = global['_io'];
   socketIO.to(room.id).emit('game_started', {
+    cover: room.cover,
     player: room.players[room.currentPlayer],
     deckRange: room.deckRange,
     totalCards: room.cards.length,

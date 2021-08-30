@@ -25,6 +25,10 @@ const roomSchema = mongoose.Schema(
       default: [],
       select: false,
     },
+    cover: {
+      type: String,
+      default: '',
+    },
     deckRange: {
       type: Number,
       default: 0,

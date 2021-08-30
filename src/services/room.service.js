@@ -30,7 +30,7 @@ const getRoomById = async (id, withCards = false) => {
   if (withCards) {
     return await Room.findById(
       id,
-      'name status players cards deckRange currentPlayer selectedCard prevSelectedCard removedCardIndices'
+      'name status players cards cover deckRange currentPlayer selectedCard prevSelectedCard removedCardIndices'
     );
   }
 
@@ -128,7 +128,9 @@ const startGame = async (roomName) => {
   }
 
   // Generate new cards deck
+  // Explicitly setting pokemon cards
   room.cards = getCardsDeck();
+  room.cover = 'https://pngimg.com/uploads/pokemon_logo/pokemon_logo_PNG12.png';
   room.deckRange = config.MAX_DECK_RANGE;
 
   // Select a random player

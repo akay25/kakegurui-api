@@ -44,7 +44,6 @@ const getRoomById = async (id, withCards = false) => {
   // If game has already started then send some extra information as well
   if (room.status === statuses[1]) {
     room.player = room.players[room.currentPlayer];
-    room.totalCards = config.TOTAL_CARDS_SIZE;
   }
   return room;
 };
@@ -59,7 +58,6 @@ const getRunningRoomById = async (id) => {
 
   if (!!room && room.status === statuses[1]) {
     room.player = room.players[room.currentPlayer];
-    room.totalCards = config.TOTAL_CARDS_SIZE;
     return room;
   }
   return null;
@@ -76,7 +74,6 @@ const getRoomByName = async (name) => {
     // If game has already started then send some extra information as well
     if (room.status === statuses[1]) {
       room.player = room.players[room.currentPlayer];
-      room.totalCards = config.TOTAL_CARDS_SIZE;
     }
     return room;
   } catch (e) {
@@ -106,7 +103,6 @@ const joinRoom = async (roomName, user) => {
   // If game has already started then send some extra information as well
   if (room.status === statuses[1]) {
     room.player = room.players[room.currentPlayer];
-    room.totalCards = config.TOTAL_CARDS_SIZE;
   }
 
   return { room, player: user };
@@ -159,7 +155,6 @@ const startGame = async (roomName) => {
     cover: room.cover,
     player: room.players[room.currentPlayer],
     deckRange: room.deckRange,
-    totalCards: room.cards.length,
     removedCardIndices: room.removedCardIndices,
     nextTurnTime: t,
   });

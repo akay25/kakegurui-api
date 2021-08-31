@@ -179,7 +179,7 @@ module.exports = function (server) {
                   await room.save();
 
                   socket.emit('set_score', room.players[room.currentPlayer].score);
-                  if (room.cards.length === room.removedCardIndices.length || room.deckRange <= 0) {
+                  if (room.cards.length === room.removedCardIndices.length) {
                     // Game is finished
                     // TODO: Emit show leader board
                     console.log('Game finished');

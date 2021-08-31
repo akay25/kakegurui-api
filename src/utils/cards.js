@@ -1,60 +1,13 @@
 const _ = require('lodash');
 
-const cards = [
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/001.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/002.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/003.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/004.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/005.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/006.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/007.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/008.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/009.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/010.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/011.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/012.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/013.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/014.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/015.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/016.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/017.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/018.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/019.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/020.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/021.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/022.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/023.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/024.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/025.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/026.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/027.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/028.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/029.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/030.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/031.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/032.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/033.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/034.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/035.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/036.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/037.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/038.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/039.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/040.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/041.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/042.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/043.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/044.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/045.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/046.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/047.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/048.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/049.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/050.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/051.png',
-  'https://assets.pokemon.com/assets/cms2/img/pokedex/full/052.png',
-];
+module.exports = function (cards, deckSize) {
+  const uniqueCards = _.uniqBy(cards);
+  const halfSize = parseInt(deckSize / 2);
+  const halfCards = uniqueCards.slice(0, halfSize);
 
-module.exports = function () {
-  return _.shuffle(_.concat(cards, cards));
+  while (halfCards.length !== halfSize) {
+    halfCards.push(_.sample(cards));
+  }
+
+  return _.shuffle(_.concat(halfCards, halfCards));
 };

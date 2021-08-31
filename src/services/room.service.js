@@ -1,6 +1,6 @@
 const httpStatus = require('http-status');
 const config = require('../config/config');
-const { Room } = require('../models');
+const { Room, Theme } = require('../models');
 const { statuses } = require('../config/statuses');
 const ApiError = require('../utils/ApiError');
 const randomNameGenerate = require('../utils/randomName');
@@ -129,10 +129,14 @@ const startGame = async (roomName) => {
   }
 
   // Generate new cards deck
+  // Get theme
+  let theme = await Theme.findById(room.themeId);
+  if (!theme) {
+    theme = await Theme.findOne();
+  }
   // Explicitly setting pokemon cards
-  room.cards = getCardsDeck();
-  room.cover = 'https://pngimg.com/uploads/pokemon_logo/pokemon_logo_PNG12.png';
-  room.deckRange = config.MAX_DECK_RANGE;
+  room.cards = getCardsDeck(theme.cards, room.deckRange);
+  room.cover = theme.cover;
 
   // Select a random player
   room.currentPlayer = Math.floor(Math.random() * room.players.length);

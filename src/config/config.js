@@ -39,7 +39,5 @@ module.exports = {
     host: envVars.REDIS_HOST,
     port: envVars.REDIS_PORT,
   },
-  MAX_DECK_RANGE: 28,
-  TOTAL_CARDS_SIZE: 104,
   MAX_WAIT_FOR_PLAYER_IN_SECS: 60,
 };

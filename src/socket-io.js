@@ -145,8 +145,7 @@ module.exports = function (server) {
                   // Remove cards from main room
                   room.removedCardIndices.push(room.selectedCard);
                   room.removedCardIndices.push(room.prevSelectedCard);
-                  // Increase deck range
-                  room.deckRange -= 2;
+
                   // Tell all to refresh cards from their decks as well
                   io.to(user.roomId).emit('remove_cards', {
                     removedCards: room.removedCardIndices,

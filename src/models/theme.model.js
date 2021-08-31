@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const { toJSON } = require('./plugins');
-const { statuses } = require('../config/statuses');
 
 const themeSchema = mongoose.Schema({
   name: {

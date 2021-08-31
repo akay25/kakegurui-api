@@ -1,6 +1,7 @@
 const socketIO = require('socket.io');
 const QUEUES = require('./workers/queues');
 const config = require('./config/config');
+const statuses = require('./config/statuses');
 const socketAuthMiddleware = require('./middlewares/socketAuth');
 const Theme = require('./models/theme.model');
 
@@ -180,9 +181,8 @@ module.exports = function (server) {
                   socket.emit('set_score', room.players[room.currentPlayer].score);
                   if (room.cards.length === room.removedCardIndices.length) {
                     // Game is finished
-                    // TODO: Emit show leader board
-                    console.log('Game finished');
-                    io.to(room.id).emit('game_finished', {});
+                    room.status = statuses[2];
+                    io.to(room.id).emit('game_finished', room);
                   }
                   return;
                 } else {

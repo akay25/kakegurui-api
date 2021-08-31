@@ -40,4 +40,5 @@ module.exports = {
     port: envVars.REDIS_PORT,
   },
   MAX_WAIT_FOR_PLAYER_IN_SECS: 60,
+  MAX_WAIT_FOR_PLAYER_TO_SEE_CARD_IN_SECS: 2,
 };

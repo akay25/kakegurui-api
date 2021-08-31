@@ -188,7 +188,7 @@ module.exports = function (server) {
                   return;
                 } else {
                   // Wait for a 3 sec and reset
-                  socket.emit('switch_player', 3);
+                  socket.emit('switch_player', config.MAX_WAIT_FOR_PLAYER_TO_SEE_CARD_IN_SECS);
                   return;
                 }
               } else if (

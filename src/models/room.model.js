@@ -25,6 +25,11 @@ const roomSchema = mongoose.Schema(
       default: [],
       select: false,
     },
+    themeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'themes',
+      select: false,
+    },
     cover: {
       type: String,
       default: '',

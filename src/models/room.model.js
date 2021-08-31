@@ -27,7 +27,6 @@ const roomSchema = mongoose.Schema(
     },
     themeId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'themes',
       select: false,
     },
     cover: {

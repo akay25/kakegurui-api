@@ -2,13 +2,14 @@ const socketIO = require('socket.io');
 const QUEUES = require('./workers/queues');
 const config = require('./config/config');
 const socketAuthMiddleware = require('./middlewares/socketAuth');
+const Theme = require('./models/theme.model');
 
 module.exports = function (server) {
   if (global['_io'] === undefined) {
     const { getRoomById } = require('./services/room.service');
     const io = socketIO(server, {
       cors: {
-        origin: 'http://192.168.0.100:8080',
+        origin: ['http://kakegurui.club', 'http://localhost:8080'],
         methods: ['GET', 'POST'],
         credentials: true,
       },
@@ -55,10 +56,46 @@ module.exports = function (server) {
         socket.leave(user.roomId);
 
         const room = await getRoomById(user.roomId);
-        // Send broad cast event to all members
-        socket.to(user.roomId).emit('room_updated', room);
-        // Send broad cast event to all members
-        socket.emit('room_left');
+        if (!!room) {
+          // Send broad cast event to all members
+          socket.to(user.roomId).emit('room_updated', room);
+          // Send broad cast event to all members
+          socket.emit('room_left');
+        }
+      });
+
+      // Update theme
+      socket.on('update_theme', async function (themeObj) {
+        const user = socket.request.user;
+
+        const theme = await Theme.findById(themeObj.id);
+        if (!!theme) {
+          const room = await getRoomById(user.roomId);
+          if (!!room && user.owner) {
+            room.themeId = theme.id;
+            await room.save();
+            // Send broad cast event to all members
+            socket.to(user.roomId).emit('theme_updated', themeObj);
+          }
+        }
+      });
+
+      // Update deck size
+      socket.on('update_deckSize', async function (deckSizeInput) {
+        const user = socket.request.user;
+
+        try {
+          const deckSize = parseInt(deckSizeInput);
+          if (deckSize >= 20 && deckSize <= 100) {
+            const room = await getRoomById(user.roomId);
+            if (!!room && user.owner) {
+              room.deckRange = deckSize;
+              await room.save();
+              // Send broad cast event to all members
+              socket.to(user.roomId).emit('deckSize_updated', deckSize);
+            }
+          }
+        } catch (e) {}
       });
 
       socket.on('ask_for_card_flip', async function (card) {
@@ -109,7 +146,7 @@ module.exports = function (server) {
                   room.removedCardIndices.push(room.selectedCard);
                   room.removedCardIndices.push(room.prevSelectedCard);
                   // Increase deck range
-                  room.deckRange += 2;
+                  room.deckRange -= 2;
                   // Tell all to refresh cards from their decks as well
                   io.to(user.roomId).emit('remove_cards', {
                     removedCards: room.removedCardIndices,
@@ -143,10 +180,11 @@ module.exports = function (server) {
                   await room.save();
 
                   socket.emit('set_score', room.players[room.currentPlayer].score);
-                  if (room.cards.length === room.removedCardIndices.length) {
+                  if (room.cards.length === room.removedCardIndices.length || room.deckRange <= 0) {
                     // Game is finished
                     // TODO: Emit show leader board
                     console.log('Game finished');
+                    io.to(room.id).emit('game_finished', {});
                   }
                   return;
                 } else {

@@ -149,7 +149,6 @@ module.exports = function (server) {
                   // Tell all to refresh cards from their decks as well
                   io.to(user.roomId).emit('remove_cards', {
                     removedCards: room.removedCardIndices,
-                    deckSize: room.deckRange,
                   });
 
                   // Increase user score

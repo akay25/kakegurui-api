@@ -35,7 +35,7 @@ const roomSchema = mongoose.Schema(
     },
     deckRange: {
       type: Number,
-      default: 0,
+      default: 20,
     },
     currentPlayer: {
       type: Number,

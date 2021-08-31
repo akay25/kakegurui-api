@@ -137,6 +137,7 @@ const startGame = async (roomName) => {
   // Explicitly setting pokemon cards
   room.cards = getCardsDeck(theme.cards, room.deckRange);
   room.cover = theme.cover;
+  room.removedCardIndices = [];
 
   // Select a random player
   room.currentPlayer = Math.floor(Math.random() * room.players.length);

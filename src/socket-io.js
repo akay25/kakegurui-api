@@ -182,6 +182,7 @@ module.exports = function (server) {
                   if (room.cards.length === room.removedCardIndices.length) {
                     // Game is finished
                     room.status = statuses[2];
+                    await room.save();
                     io.to(room.id).emit('game_finished', room);
                   }
                   return;

@@ -179,6 +179,12 @@ module.exports = function (server) {
                   await room.save();
 
                   socket.emit('set_score', room.players[room.currentPlayer].score);
+                  socket
+                    .to(user.roomId)
+                    .emit('set_player_score', {
+                      playerId: room.currentPlayer,
+                      score: room.players[room.currentPlayer].score,
+                    });
                   if (room.cards.length === room.removedCardIndices.length) {
                     // Game is finished
                     room.status = statuses[2];

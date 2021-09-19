@@ -139,9 +139,10 @@ const startGame = async (roomName) => {
   const players = [];
   for (const p of room.players) {
     p.score = 0;
-    players.append(p);
+    players.push(p);
   }
   room.players = players;
+  room.markModified('players');
 
   // Select a random player
   room.currentPlayer = Math.floor(Math.random() * room.players.length);

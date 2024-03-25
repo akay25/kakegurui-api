@@ -10,7 +10,7 @@ module.exports = function (server) {
     const { getRoomById } = require('./services/room.service');
     const io = socketIO(server, {
       cors: {
-        origin: ['http://kakegurui.club', 'http://localhost:8080'],
+        origin: config.ALLOWED_ORIGINS,
         methods: ['GET', 'POST'],
         credentials: true,
       },
@@ -96,7 +96,7 @@ module.exports = function (server) {
               socket.to(user.roomId).emit('deckSize_updated', deckSize);
             }
           }
-        } catch (e) {}
+        } catch (e) { }
       });
 
       socket.on('ask_for_card_flip', async function (card) {
